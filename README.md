@@ -33,11 +33,11 @@ These are initial responsibilities; adjust after problem statement allocation.
 6. Integrator reviews and merges, resolves conflicts, then tests the app end-to-end.
 7. Never push directly to `main` once coding begins. Do not force-push shared branches.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [TEAM_PLAN.md](TEAM_PLAN.md) and [DEMO_CHECKLIST.md](DEMO_CHECKLIST.md).
+See [DEMO_CHECKLIST.md](DEMO_CHECKLIST.md) for testing and demonstration checks.
 
 ## When the assigned problem statement arrives
 
-Capture the **exact wording** in [TEAM_PLAN.md](TEAM_PLAN.md). Identify the user problem, required features, uniqueness, demo steps and platform constraints before generating code. Keep the MVP small and functional; add differentiators only after a working vertical slice.
+Capture the **exact wording** in the README or the assigned GitHub issue. Identify the user problem, required features, uniqueness, demo steps and platform constraints before generating code. Keep the MVP small and functional; add differentiators only after a working vertical slice.
 
 ## Run the application
 
