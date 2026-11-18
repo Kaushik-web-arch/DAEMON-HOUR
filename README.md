@@ -1,48 +1,61 @@
-# DAEMON HOUR — Android Hackathon Workspace
+# Ghost Drain Hunter
 
-Shared repository for a three-person Android hackathon team.
+**An Android app that measures battery loss while your phone screen is off.**
 
-> **Important:** The organizers will assign the problem statement during the event. Do not treat any previously discussed prototype idea as the final requirement.
+Ghost Drain Hunter records the battery level when the screen turns off and when it turns on again. It calculates the battery percentage points lost per hour, compares the result with a threshold the user chooses, and keeps a local history of sessions.
 
-## Current status
+## What it does
 
-- Repository scaffold and collaboration rules only.
-- Final problem statement: **not assigned yet**.
-- Planned stack: **Kotlin, Android Studio, Jetpack Compose**, subject to the assigned problem.
-- Cost: **₹0 additional spend**. Prefer local/device APIs; no paid API keys or services.
-- Demo: Android emulator or USB-connected Android device; APK if requested.
+- Records battery level and timestamps at screen-off and screen-on.
+- Calculates the screen-off drain rate in percentage points per hour.
+- Shows a high-drain alert when the selected threshold is exceeded.
+- Lets the user adjust the alert threshold.
+- Keeps a history of previous monitoring sessions on the device.
+- Handles charging and invalid readings separately.
 
-## Branches
+A short session can produce a large hourly estimate. For example, losing one percentage point in a few seconds is mathematically extrapolated to an hour, so longer sessions give a more representative rate. The app shows the actual readings and duration alongside the estimate.
 
-| Branch | Owner | Scope |
-| --- | --- | --- |
-| `main` | Entire team | Stable integrated and demo-ready app |
-| `feature/ui` | Member 1 / integration lead | Screens, navigation, design system, integration |
-| `feature/core` | Member 2 | Problem-specific Android functionality |
-| `feature/insights` | Member 3 | Logic, insights, tests, demo validation |
+## How it works
 
-These are initial responsibilities; adjust after problem statement allocation.
+1. Start monitoring in the app.
+2. The app records the battery level and time when the screen turns off.
+3. When the screen turns on, the app records the new battery level and time.
+4. It calculates the loss rate, checks the chosen threshold, and saves the session locally.
 
-## Team workflow
+## Built with
 
-1. Accept GitHub collaborator invitations and clone the repository.
-2. Work on your branch only; pull from `main` before starting new work.
-3. Agree on the app package, data models, interfaces and file ownership before parallel implementation.
-4. Commit small, runnable changes; push your branch.
-5. Open a pull request **into `main`** with a short description, testing evidence, and screenshots for UI changes.
-6. Integrator reviews and merges, resolves conflicts, then tests the app end-to-end.
-7. Never push directly to `main` once coding begins. Do not force-push shared branches.
+- Kotlin
+- Native Android APIs for screen events and battery information
+- Jetpack Compose and Material 3
+- Android SharedPreferences for local session history stored as JSON
+- JUnit for domain logic tests
 
-See [DEMO_CHECKLIST.md](DEMO_CHECKLIST.md) for testing and demonstration checks.
+No external API, account, or hosted backend is required. Monitoring data stays on the device.
 
-## When the assigned problem statement arrives
+## Run it
 
-Capture the **exact wording** in the README or the assigned GitHub issue. Identify the user problem, required features, uniqueness, demo steps and platform constraints before generating code. Keep the MVP small and functional; add differentiators only after a working vertical slice.
+Open the project in Android Studio and allow Gradle sync to finish. Select an Android emulator or connected device, then run the app configuration.
 
-## Run the application
+To build and run the unit tests on Windows:
 
-_Not available yet. Add the Android Studio project and verified run instructions after the problem statement is assigned._
+```powershell
+.\gradlew.bat :app:assembleDebug :app:testDebugUnitTest
+```
 
-## Security
+The debug APK is generated at:
 
-Do not commit tokens, passwords, local.properties, keystores, personal data, APK binaries, or machine-specific build outputs.
+```
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+## Project status
+
+The integrated Android application source is on the [ghost-drain/team-integrated branch](https://github.com/Kaushik-web-arch/DAEMON-HOUR/tree/ghost-drain/team-integrated). That branch contains the monitoring flow, drain analysis, dashboard, session history, and tests.
+
+The app was built and unit-tested with Gradle and demonstrated on an Android emulator. The hourly rate is an estimate based on the duration and battery change measured in each session.
+
+## Team
+
+- **Kaushik** — Android integration, monitoring and local data handling
+- **Prithvi** — drain calculation logic and unit tests
+- **Adithya** — Compose dashboard and emulator validation
