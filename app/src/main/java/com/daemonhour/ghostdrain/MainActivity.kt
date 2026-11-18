@@ -1,6 +1,7 @@
 package com.daemonhour.ghostdrain
 
 import android.Manifest
+import com.daemonhour.ghostdrain.ui.screens.GhostDrainRoute
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -34,10 +35,16 @@ class MainActivity : ComponentActivity() {
                 errorContainer = Color(0xFF592D27),
                 onErrorContainer = Color(0xFFFFDAD2),
             )) {
-                BaselineScreen(viewModel.state) { event ->
-                    viewModel.onEvent(event)
-                    if (event == DrainEvent.Start) requestNotificationOnce()
-                }
+                GhostDrainRoute(
+                    state = viewModel.state,
+                    onEvent = { event ->
+                        viewModel.onEvent(event)
+
+                        if (event == DrainEvent.Start) {
+                            requestNotificationOnce()
+                        }
+                    }
+                )
             }
         }
     }
