@@ -10,14 +10,18 @@ permissions:
 jobs:
   assemble:
     if: github.head_ref == 'ghost-drain/build-check'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ce1874c68e63c45f32b43b2e5539ab1993600839
+          persist-credentials: false
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+      - uses: android-actions/setup-android@v3
       - name: Install Android SDK
         run: sdkmanager 'platforms;android-35' 'build-tools;34.0.0'
       - name: Build debug APK
