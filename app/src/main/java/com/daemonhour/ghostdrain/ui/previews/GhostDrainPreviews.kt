@@ -47,7 +47,8 @@ fun GhostDrainNormalPreview() {
                 latestSession = sampleNormalSession,
                 history = sampleHistory
             ),
-            onEvent = {}
+            onStartStop = {},
+            onThresholdChanged = {}
         )
     }
 }
@@ -64,7 +65,8 @@ fun GhostDrainHighAlertPreview() {
                 latestSession = sampleHighDrainSession,
                 history = sampleHistory
             ),
-            onEvent = {}
+            onStartStop = {},
+            onThresholdChanged = {}
         )
     }
 }
@@ -81,7 +83,8 @@ fun GhostDrainEmptyPreview() {
                 latestSession = null,
                 history = emptyList()
             ),
-            onEvent = {}
+            onStartStop = {},
+            onThresholdChanged = {}
         )
     }
 }
@@ -98,7 +101,8 @@ fun GhostDrainDarkThemePreview() {
                 latestSession = sampleHighDrainSession,
                 history = sampleHistory
             ),
-            onEvent = {}
+            onStartStop = {},
+            onThresholdChanged = {}
         )
     }
 }
