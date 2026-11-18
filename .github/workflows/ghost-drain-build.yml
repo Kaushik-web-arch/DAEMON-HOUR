@@ -36,7 +36,10 @@ jobs:
           tools_path=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager | sort -V | tail -1)
           image='system-images;android-35;google_apis;x86_64'
           "$tools_path" "$image"
-          echo no | "$(dirname "$tools_path")/avdmanager" create avd -n ghost-drain-test -k "$image" --force
+          export ANDROID_AVD_HOME="$RUNNER_TEMP/ghost-avds"
+          mkdir -p "$ANDROID_AVD_HOME"
+          printf 'no\n' | "$(dirname "$tools_path")/avdmanager" create avd -n ghost-drain-test -k "$image" -p "$ANDROID_AVD_HOME/ghost-drain-test.avd" --force
+          test -f "$ANDROID_AVD_HOME/ghost-drain-test.ini"
           sudo chmod a+rw /dev/kvm
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
           adb_path="$ANDROID_HOME/platform-tools/adb"
