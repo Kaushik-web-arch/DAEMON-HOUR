@@ -1,0 +1,107 @@
+name: Ghost Drain APK check
+
+on:
+  pull_request:
+    branches: ['ghost-drain/integration']
+
+permissions:
+  contents: read
+
+jobs:
+  assemble:
+    if: github.head_ref == 'ghost-drain/build-check'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ce1874c68e63c45f32b43b2e5539ab1993600839
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android SDK
+        run: |
+          export ANDROID_HOME=/usr/local/lib/android/sdk
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          if [[ ! -f "$ANDROID_HOME/platforms/android-35/android.jar" || ! -d "$ANDROID_HOME/build-tools/34.0.0" ]]; then
+            sdkmanager_path=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager | sort -V | tail -1)
+            "$sdkmanager_path" 'platforms;android-35' 'build-tools;34.0.0'
+          fi
+      - name: Build debug APK
+        run: ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug
+      - name: Start Android 35 emulator
+        run: |
+          tools_path=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager | sort -V | tail -1)
+          image='system-images;android-35;google_apis;x86_64'
+          "$tools_path" "$image"
+          export ANDROID_AVD_HOME="$RUNNER_TEMP/ghost-avds"
+          mkdir -p "$ANDROID_AVD_HOME"
+          printf 'no\n' | "$(dirname "$tools_path")/avdmanager" create avd -n ghost-drain-test -k "$image" -p "$ANDROID_AVD_HOME/ghost-drain-test.avd" --force
+          test -f "$ANDROID_AVD_HOME/ghost-drain-test.ini"
+          sudo chmod a+rw /dev/kvm
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          adb_path="$ANDROID_HOME/platform-tools/adb"
+          "$adb_path" start-server
+          "$ANDROID_HOME/emulator/emulator" -avd ghost-drain-test -port 5554 -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -partition-size 2048 </dev/null > /tmp/ghost-emulator.log 2>&1 &
+          emulator_pid=$!
+          for attempt in {1..60}; do
+            if "$adb_path" -s emulator-5554 get-state 2>/dev/null | grep -qx device; then
+              exit 0
+            fi
+            if ! kill -0 "$emulator_pid" 2>/dev/null; then
+              break
+            fi
+            sleep 3
+          done
+          cat /tmp/ghost-emulator.log
+          "$adb_path" devices -l
+          exit 1
+      - name: Verify screen-off capture, alert and history
+        run: |
+          timeout 180s bash -c 'until [[ $(adb shell getprop sys.boot_completed | tr -d "\r") == 1 ]]; do sleep 3; done'
+          adb shell wm dismiss-keyguard
+          adb shell locksettings set-disabled true
+          adb shell settings put system screen_off_timeout 1800000
+          app=com.daemonhour.ghostdrain
+          adb install app/build/outputs/apk/debug/app-debug.apk
+          adb shell pm grant "$app" android.permission.POST_NOTIFICATIONS
+          adb shell dumpsys battery unplug
+          adb shell dumpsys battery set level 90
+          adb shell am start -W -n "$app/.MainActivity"
+          dump_ui() {
+            adb shell rm -f /sdcard/ghost-ui.xml
+            adb shell uiautomator dump /sdcard/ghost-ui.xml
+            adb pull /sdcard/ghost-ui.xml /tmp/ghost-ui.xml
+          }
+          dump_ui
+          coordinates=$(python3 -c 'import re, xml.etree.ElementTree as E; nodes=E.parse("/tmp/ghost-ui.xml").iter("node"); node=next(n for n in nodes if n.get("text")=="Start monitoring"); x1,y1,x2,y2=map(int,re.findall(r"\d+",node.get("bounds"))); print((x1+x2)//2,(y1+y2)//2)')
+          adb shell input tap $coordinates
+          sleep 2
+          dump_ui
+          grep -q 'Ready · Turn your screen off' /tmp/ghost-ui.xml
+          adb shell input keyevent 223
+          sleep 4
+          adb shell dumpsys battery set level 88
+          sleep 3
+          adb shell input keyevent 224
+          adb shell wm dismiss-keyguard
+          sleep 3
+          dump_ui
+          grep -q 'Something is draining your phone in your pocket' /tmp/ghost-ui.xml
+          grep -q 'Screen off · 90%' /tmp/ghost-ui.xml
+          grep -q 'Screen on · 88%' /tmp/ghost-ui.xml
+          grep -q 'pp/hour' /tmp/ghost-ui.xml
+          echo "Verified capture from 90% to 88%, hourly rate and high-drain alert"
+          adb shell am force-stop "$app"
+          adb shell am start -W -n "$app/.MainActivity"
+          dump_ui
+          grep -q 'Screen off · 90%' /tmp/ghost-ui.xml
+          grep -q 'Screen on · 88%' /tmp/ghost-ui.xml
+          echo "Verified history survives app restart"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ghost-drain-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
