@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.GhostDrain" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#111516</item>
+        <item name="android:colorAccent">#AEF2B0</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
