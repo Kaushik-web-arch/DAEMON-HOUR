@@ -21,9 +21,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
       - name: Install Android SDK
-        run: sdkmanager 'platforms;android-35' 'build-tools;34.0.0'
+        run: |
+          export ANDROID_HOME=/usr/local/lib/android/sdk
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          if [[ ! -f "$ANDROID_HOME/platforms/android-35/android.jar" || ! -d "$ANDROID_HOME/build-tools/34.0.0" ]]; then
+            sdkmanager_path=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager | sort -V | tail -1)
+            "$sdkmanager_path" 'platforms;android-35' 'build-tools;34.0.0'
+          fi
       - name: Build debug APK
         run: ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug
       - uses: actions/upload-artifact@v4
