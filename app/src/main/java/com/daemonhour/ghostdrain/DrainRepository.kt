@@ -7,12 +7,11 @@ import androidx.compose.runtime.setValue
 import com.daemonhour.ghostdrain.contract.BatterySample
 import com.daemonhour.ghostdrain.contract.DEFAULT_THRESHOLD
 import com.daemonhour.ghostdrain.contract.DrainAnalyzer
-import com.daemonhour.ghostdrain.contract.DrainAssessment
 import com.daemonhour.ghostdrain.contract.DrainSession
-import com.daemonhour.ghostdrain.contract.DrainStatus
 import com.daemonhour.ghostdrain.contract.DrainUiState
 import com.daemonhour.ghostdrain.contract.MonitorStatus
 import com.daemonhour.ghostdrain.contract.SessionResult
+import com.daemonhour.ghostdrain.domain.DrainInsights
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -20,7 +19,7 @@ import org.json.JSONObject
 // The activity, ViewModel and service access this repository on the main thread.
 internal class DrainRepository private constructor(context: Context) {
     private val preferences = context.getSharedPreferences("ghost_drain", Context.MODE_PRIVATE)
-    private val analyzer: DrainAnalyzer = baselineAnalyzer
+    private val analyzer: DrainAnalyzer = DrainInsights
     private var history = loadHistory()
     var state by mutableStateOf(DrainUiState(
         threshold = preferences.getFloat("threshold", DEFAULT_THRESHOLD.toFloat()).toDouble(),
@@ -98,23 +97,5 @@ internal class DrainRepository private constructor(context: Context) {
 
         fun get(context: Context): DrainRepository =
             instance ?: DrainRepository(context.applicationContext).also { instance = it }
-    }
-}
-
-// Working analyzer for the first vertical slice. The domain PR supplies the shared implementation.
-private val baselineAnalyzer = DrainAnalyzer { session, threshold ->
-    val shortSample = session.durationMs in 1L until 900_000L
-    when {
-        session.durationMs <= 0L || session.start.percent !in 0..100 ||
-            session.end.percent !in 0..100 ->
-            DrainAssessment(null, DrainStatus.INVALID, shortSample)
-        session.pluggedInDuringSession || session.start.pluggedIn || session.end.pluggedIn ->
-            DrainAssessment(null, DrainStatus.CHARGING, shortSample)
-        session.pointsLost < 0 -> DrainAssessment(null, DrainStatus.INVALID, shortSample)
-        else -> {
-            val rate = session.pointsLost * 3_600_000.0 / session.durationMs
-            val status = if (rate > threshold) DrainStatus.HIGH_DRAIN else DrainStatus.NORMAL
-            DrainAssessment(rate, status, shortSample)
-        }
     }
 }
